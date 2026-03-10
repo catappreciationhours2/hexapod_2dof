@@ -113,14 +113,28 @@ def anglesToSerial(angles: np.ndarray, speed: Optional[int] = None,
     # speed is in microseconds/second and time is in milliseconds. A speed of
     # 1000us takes 1 second to go 90 degrees
     serial_string = ''
-    for i, angle in enumerate(angles_processed):
-        serial_string += '#' + str(i) + 'P' + \
-            str(angleToPW(angle))
-        if speed is not None:
-            serial_string += 'S' + str(speed)
+    # We loop through each leg (0-5)
+    for leg_idx in range(6):
+        # We only loop through the first TWO joints (0=Base, 1=Knee)
+        # Joint 2 (Tibia) is ignored.
+        for joint_idx in range(2):
+            
+            # CALCULATE THE PHYSICAL PIN (Channel)
+            # Standard SSC-32U mapping for 3-DOF is usually (leg * 4) or continuous.
+            # If your physical servos are plugged into pins 0,1, 4,5, 8,9... (skipping 2,3, 6,7)
+            # use this logic:
+            pin = (leg_idx * 2) + joint_idx 
+            
+            angle = temp_angles[leg_idx, joint_idx]
+            
+            serial_string += '#' + str(pin) + 'P' + str(angleToPW(angle))
+            
+            if speed is not None:
+                serial_string += 'S' + str(speed)
 
     if time is not None:
         serial_string += 'T' + str(time)
+        
     serial_string += '\r'
     return bytes(serial_string, 'ascii')
 

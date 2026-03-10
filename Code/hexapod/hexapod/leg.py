@@ -23,9 +23,12 @@ startLegPos:
 """
 import numpy as np
 from numpy.linalg import inv
+import math
 from math import degrees, sin, cos, acos, atan2, sqrt, pi
 from hexapod.rotation import yRot, zRot
 from typing import List
+
+RIGID_LEG_LENGTH = 164.96 # sum of tibia and femur - NEED TO UPDATE
 
 
 def getFeetPos(leg_model: np.ndarray) -> np.ndarray:
@@ -93,30 +96,26 @@ def legAngle(x: float, y: float, z: float, coax: float = 26.34,
         Refer to the Kinematics Calculations document in the Docs folder for
         how the equations in this function were found.
     """
-    coax_angle = degrees(atan2(y, x))
-    coax_rot = zRot(-coax_angle)
-    leg_rotated = np.matmul(inv(coax_rot), np.array([[x, y, z]]).T)
-    femur_angle = degrees(acos((tibia ** 2 - femur ** 2 - leg_rotated[2] ** 2
-                                - (leg_rotated[0] - coax) ** 2) /
-                               (-2 * femur * (sqrt(leg_rotated[2] ** 2 +
-                                                   (leg_rotated[0] - coax)**2))
-                                )))\
-        - degrees(atan2(-leg_rotated[2],
-                        (leg_rotated[0] - coax)))
-    tibia_angle = degrees(acos((leg_rotated[2] ** 2 + (leg_rotated[0] - coax)
-                                ** 2 - femur ** 2 - tibia ** 2) /
-                               (-2 * femur * tibia))) - 90
-
-    if abs(coax_angle) <= 1e-10:
-        coax_angle = 0
-
-    if abs(femur_angle) <= 1e-10:
-        femur_angle = 0
-
-    if abs(tibia_angle) <= 1e-10:
-        tibia_angle = 0
-
-    return [coax_angle, femur_angle, tibia_angle]
+    base_angle = math.degrees(math.atan2(y, x))
+    
+    base_rot_inv = inv(zRot(-base_angle))
+    leg_rotated = np.matmul(base_rot_inv, np.array([[x, y, z]]).T)
+    
+    lx = leg_rotated[0].item()
+    lz = leg_rotated[2].item()
+    
+    dx = lx - coax
+    dz = lz
+    
+    # FIX: We remove the negative sign from dz to point the angle downwards 
+    # OR we use math.atan2(dz, dx) depending on your yRot implementation.
+    # Try this specific orientation for downward legs:
+    knee_angle = math.degrees(math.atan2(dz, dx))
+    
+    if abs(base_angle) <= 1e-10: base_angle = 0
+    if abs(knee_angle) <= 1e-10: knee_angle = 0
+    
+    return [base_angle, knee_angle, 0]
 
 
 def legModel(leg_angles: np.ndarray, body_model: np.ndarray) -> np.ndarray:
@@ -154,67 +153,31 @@ def legModel(leg_angles: np.ndarray, body_model: np.ndarray) -> np.ndarray:
     return leg_model
 
 
-def legPos(coax_angle: float, femur_angle: float, tibia_angle: float,
+def legPos(base_angle: float, knee_angle: float, tibia_angle: float,
            body_model: np.ndarray, leg_num: int, coax: float = 26.34,
            femur: float = 76.2, tibia: float = 88.32) -> np.ndarray:
     """
-    Finds the positions for the leg segments.
-
-    Takes the angles of all of the leg servos, the leg dimensions, and the
-    model of the body to find the locations of each segment of a leg.
-
-    Parameters
-    ----------
-    coax_angle: float
-        The angle of the coax servo or the servo directly attached to the body.
-    femur_angle: float
-        The angle of the femur servo or the servo that moves the knee.
-    tibia_angle: float
-        The angle of the tibia servo or the servo that moves the foot.
-    body_model: np.ndarray
-        The 7x3 numpy array containing the locations of the coax servos.
-    leg_num: int
-        The number of the leg. leg 0 is the front right leg and each
-        successive leg is clockwise looking down at the hexapod.
-    coax: float, default=26.34
-        The length of the coax segment in millimeters or the segment from the
-        body attachment point to the beginning of the femur.
-    femur: float, default=76.2
-        The length of the femur segment in millimeters or the segment from the
-        beginning of the femur to the start of the tibia.
-    tibia: float, default=88.32
-        The length of the tibia segment in millimeters or the segment from the
-        start of the tibia to the foot of the leg.
-
-    Returns
-    -------
-    leg_positions: np.ndarray
-        The global positions of the body attachment point, the coax end point,
-        the femur end point, and the tibia end point or foot of the leg. This
-        is a 1x4 numpy array.
-
-    See Also
-    --------
-    legModel:
-        Generates the model of the legs based on the servo angles of the legs.
-
-    Notes
-    -----
-    The default leg segment lengths are from the CAD model I initially made.
+    Forward Kinematics for 2-DOF leg.
+    Calculates 3D positions of joints.
     """
-    coax_rot = zRot(coax_angle)
-    femur_rot = np.matmul(yRot(femur_angle), coax_rot)
-    tibia_rot = np.matmul(yRot(tibia_angle), femur_rot)
+    # Use the combined rigid length
+    rigid_limb = RIGID_LEG_LENGTH
 
-    leg_coax = np.matmul(inv(coax_rot), np.array([[coax, 0, 0]]).T)\
-        + np.array([body_model[leg_num, :]]).T
-    leg_femur = np.matmul(inv(femur_rot), np.array([[femur, 0, 0]]).T)\
-        + leg_coax
-    leg_tibia = np.matmul(inv(tibia_rot), np.array([[0, 0, -tibia]]).T)\
-        + leg_femur
+    base_rot = zRot(base_angle)
+    # Knee rotates locally on Y axis after base rotation
+    knee_rot = np.matmul(yRot(knee_angle), base_rot)
 
-    leg_positions = np.concatenate((np.array([body_model[leg_num, :]]),
-                                    leg_coax.T, leg_femur.T, leg_tibia.T),
+    # Point 0: Body attachment
+    leg_base = np.array([body_model[leg_num, :]]).T
+    
+    # Point 1: Knee joint (end of coax)
+    leg_knee = np.matmul(inv(base_rot), np.array([[coax, 0, 0]]).T) + leg_base
+    
+    # Point 2 & 3: Foot (end of rigid limb)
+    # We double up the knee point to keep the array size (4,3) for the plotter
+    leg_foot = np.matmul(inv(knee_rot), np.array([[rigid_limb, 0, 0]]).T) + leg_knee
+
+    leg_positions = np.concatenate((leg_base.T, leg_knee.T, leg_knee.T, leg_foot.T),
                                    axis=0)
     return leg_positions
 
@@ -252,7 +215,8 @@ def recalculateLegAngles(feet_positions: np.ndarray,
     return leg_angles
 
 
-def startLegPos(body_model: np.ndarray, start_radius: float = 180,
+# NEED TO UPDATE START_RADIUS, START_HEIGHT
+def startLegPos(body_model: np.ndarray, start_radius: float = 170,
                 start_height: float = 60) -> np.ndarray:
     """
     Find the neutral position of the hexapod.

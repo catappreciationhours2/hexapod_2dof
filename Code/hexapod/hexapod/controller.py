@@ -70,7 +70,7 @@ def emgController(usb_port: string, mode: bool) -> None:
     # setup the starting robot positions
     body_model = bodyPos(pitch=0, roll=0, yaw=0, Tx=0, Ty=0, Tz=0,
                          body_offset=85)
-    start_leg = startLegPos(body_model, start_radius=180, start_height=60)
+    start_leg = startLegPos(body_model, start_radius=170, start_height=60)
     # get the serial message from the angles
     message = anglesToSerial(start_leg, 500, 2000)
     sendData(port, message)  # send the serial message
@@ -137,7 +137,7 @@ def gamePadController(usb_port: string, mode: int) -> None:
     stand(usb_port)
     body_model = bodyPos(pitch=0, roll=0, yaw=0, Tx=0, Ty=0, Tz=0,
                          body_offset=85)
-    start_leg = startLegPos(body_model, start_radius=180, start_height=60)
+    start_leg = startLegPos(body_model, start_radius=170, start_height=60)
     # get the serial message from the angles
     leg_model = legModel(start_leg, body_model)
     previous_walk_step = 0
@@ -231,7 +231,7 @@ def gamePadController(usb_port: string, mode: int) -> None:
                 body_model =\
                     bodyPos(pitch=pitch, roll=roll, yaw=0, Tx=Tx,
                             Ty=Ty, Tz=0, body_offset=85)
-                start_leg = startLegPos(body_model, start_radius=180,
+                start_leg = startLegPos(body_model, start_radius=170,
                                         start_height=60)
                 # get the serial message from the angles
                 message = anglesToSerial(start_leg, 500, 2000)
@@ -243,7 +243,7 @@ def gamePadController(usb_port: string, mode: int) -> None:
                 body_model =\
                     bodyPos(pitch=0, roll=0, yaw=yaw, Tx=0,
                             Ty=0, Tz=Tz, body_offset=85)
-                start_leg = startLegPos(body_model, start_radius=180,
+                start_leg = startLegPos(body_model, start_radius=170,
                                         start_height=60)
                 # get the serial message from the angles
                 message = anglesToSerial(start_leg, 500, 2000)
@@ -350,12 +350,12 @@ def stand(usb_port: string) -> None:
     # setup the starting robot positions
     body_model = bodyPos(pitch=0, roll=0, yaw=0, Tx=0, Ty=0, Tz=0,
                          body_offset=85)
-    start_leg = startLegPos(body_model, start_radius=180, start_height=10)
+    start_leg = startLegPos(body_model, start_radius=170, start_height=10)
     # get the serial message from the angles
     message = anglesToSerial(start_leg, 500, 2000)
     sendData(port, message)  # send the serial message
     sleep(2)
-    start_leg = startLegPos(body_model, start_radius=180, start_height=60)
+    start_leg = startLegPos(body_model, start_radius=170, start_height=60)
     # get the serial message from the angles
     message = anglesToSerial(start_leg, 500, 2000)
     sendData(port, message)  # send the serial message
@@ -383,7 +383,7 @@ def turnCycle(usb_port: string, turn_angle: float) -> None:
     # setup the starting robot positions
     body_model = bodyPos(pitch=0, roll=0, yaw=0, Tx=0, Ty=0, Tz=0,
                          body_offset=85)
-    start_leg = startLegPos(body_model, start_radius=180, start_height=60)
+    start_leg = startLegPos(body_model, start_radius=170, start_height=60)
     # get the serial message from the angles
     message = anglesToSerial(start_leg, 500, 2000)
     sendData(port, message)  # send the serial message
@@ -418,7 +418,7 @@ def walkCycle(usb_port: string, distance: float, angle: float) -> None:
     # setup the starting robot positions
     body_model = bodyPos(pitch=0, roll=0, yaw=0, Tx=0, Ty=0, Tz=0,
                          body_offset=85)
-    start_leg = startLegPos(body_model, start_radius=180, start_height=60)
+    start_leg = startLegPos(body_model, start_radius=170, start_height=60)
     # get the serial message from the angles
     message = anglesToSerial(start_leg, 500, 2000)
     sendData(port, message)  # send the serial message
