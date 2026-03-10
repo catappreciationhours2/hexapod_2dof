@@ -1,160 +1,90 @@
-[![DeepSource](https://deepsource.io/gh/Nabizzle/Hexapod.svg/?label=active+issues&show_trend=true&token=VB3rbYYMZzJr8nYxjxjMuPUo)](https://deepsource.io/gh/Nabizzle/Hexapod/?ref=repository-badge)
-[![DeepSource](https://deepsource.io/gh/Nabizzle/Hexapod.svg/?label=resolved+issues&show_trend=true&token=VB3rbYYMZzJr8nYxjxjMuPUo)](https://deepsource.io/gh/Nabizzle/Hexapod/?ref=repository-badge)
-[![codecov](https://codecov.io/gh/Nabizzle/Hexapod/branch/main/graph/badge.svg?token=Y0SA932W1L)](https://codecov.io/gh/Nabizzle/Hexapod)
+# 12-Servo 2-DOF Hexapod Adaptation
+
+# Table of Contents
+
+* [Hexapod Project Description](#hexapod-project-description)
+* [Hackberry Pi Adaptation](#hackberry-pi-adaptation)
+* [Getting Started](#getting-started)
+  * [Prerequisites](#prerequisites)
+* [Authors](#authors)
+* [Acknowledgements & Citations](#acknowledgements--citations)
+* [Description of Each Script](#description-of-each-script)
+  * [Rotation Matrices](#rotation-matrices)
+  * [Body Functions](#body-functions)
+  * [Leg Functions (12-Servo / 2-DOF)](#leg-functions)
+  * [Movement Functions](#movement-functions)
+  * [Movement Cycles](#movement-cycles)
+  * [Model Visualization](#model-visualization)
+
+# Hexapod Project Description
+
+The goal of this project is to model and control a radially symmetrical hexapod (six-legged robot) capable of omnidirectional movement and independent body manipulation. This project includes a computational simulation used to verify inverse kinematics and a library of functions to drive a physical robot via serial commands.
+
+# Hackberry Pi Adaptation
+This repository contains a specialized adaptation developed for **Hackberry Pi (ACM@CMU)**. While the original design utilized an 18-servo configuration (3-DOF per leg), this version has been refactored to work with a **12-servo setup** (2-DOF per leg). 
+
+In this architecture:
+1. **Base Servos:** Handle left/right horizontal rotation (Yaw).
+2. **Knee Servos:** Handle up/down vertical lifting (Pitch).
+3. **Rigid Limbs:** The third joint (Tibia) is replaced with a fixed rigid segment, simplifying the weight and power requirements while maintaining highly effective walking and turning gaits.
+
+## Getting Started
+
+This repository contains the computational model for testing 2-DOF inverse kinematics. The core logic is contained within the Jupyter Notebook `Walking Model.ipynb`. This simulation verifies that the robot can maintain a level body while the feet follow the specific arc-trajectories required by fixed-length limbs.
+
+### Prerequisites
+
+[Python 3.8.12 or later](https://www.python.org/)
+* Required libraries:
+  * `Numpy`
+  * `Matplotlib`
+  * `Seaborn`
+  * `Math`
+  * `Time`
+
+## Authors
+
+* **Noella Horo** - *2-DOF Adaptation & Implementation*
+* **Nabeel Chowdhury** - *Original 18-servo Computational Model*
+
+## Acknowledgements & Citations
+
+This project is an adaptation of the original Hexapod project by **Nabeel Chowdhury**. 
+* **Original Source Code:** [Nabizzle/Hexapod](https://github.com/Nabizzle/Hexapod)
+* **Design Inspiration:** Adapted from the [Capers II](https://www.instructables.com/Capers-II-a-Hexapod-Robot/) design by **Toglefritz**.
+* **Kinematics Guidance:** Equations based on research by [Oscar Liang](https://oscarliang.com/inverse-kinematics-implementation-hexapod-robots/).
 
 # Description of Each Script
 
-Each description below is of each function in the computational model which will be transferred over to the physical hexapod.
-
 ## Rotation Matrices
-
-These are the functions to find the rotation of any point around an axis by an angle in degrees.
-
-### xRot
-
-Rotation about the x axis by an angle in degrees.
-
-### yRot
-
-Rotation about the y axis by an angle in degrees.
-
-### zRot
-
-Rotation about the z axis by an angle in degrees.
+These functions calculate the rotation of 3D points around primary axes to transform target coordinates into the local frame of each leg.
+* **xRot / yRot / zRot**: Rotation about the X, Y, and Z axes respectively in degrees.
 
 ## Body Functions
-
-These are functions that relate to creating the model of the hexapod body
-
-### bodyPos
-
-Creates a hexagon model of the body with the given pitch, roll, and yaw angles, the given x, y, and z translations from the center point of the coordinate axes, and the coax servo distance from the center of the coordinate axis.
+* **bodyPos**: Generates the 3D hexagon model representing the chassis. It calculates the position of the six leg attachment points based on global pitch, roll, yaw, and translation.
 
 ## Leg Functions
-
-These are functions for finding and refinding the positions of the legs from their servo angles or to do the reverse in finding the servo angles from the end positions of the hexapod feet.
-
-### legPos
-
-This function finds the positions of each segment of the leg from its servo angles, the leg number, and the leg dimensions and then outputs those locations to be added to the larger model of the legs.
-
-### legAngle
-
-Finds the servo angles of the leg based on the x, y, and z positions of the end contact point of the leg and the dimensions of the leg. This function then returns the servo angles as an output.
-
-### recalculateLegAngles
-
-Takes an input of the current body model and current contact points of the legs to calculate the servo angles of all of the legs. This function outputs the servo angles of all of the legs.
-
-### startLegPos
-
-Takes the body model and the starting outer radius the legs make on the robot as wel as the starting height of the robot off of the ground to find the starting servo angles of all of the legs. This function then outputs those angles as an array.
-
-### legModel
-
-Takes in the servo angles of all of the legs as an array and calculates the positions of each leg segement to combine into a model of the legs.
-
-### getFeetPos
-
-This function outputs the contact points of each leg with the ground as x, y, and z coordinates in an array.
+This module has been refactored for the **12-servo (2-DOF)** kinematic chain.
+* **legAngle (Inverse Kinematics)**: Calculates the necessary `Base` and `Knee` angles to reach a target coordinate. Unlike the 3-DOF version, this uses a 2D trigonometric approach to solve for the pitch of the rigid leg.
+* **legPos (Forward Kinematics)**: Determines the 3D coordinates of the joints (Body, Knee, and Foot) based on current servo angles. 
+* **startLegPos**: Initializes the hexapod in a neutral stance. The stance radius and height are optimized to ensure the 2-DOF limbs reach the ground plane effectively.
+* **getFeetPos**: Returns the global contact points of each leg with the ground.
+* **recalculateLegAngles**: Batch processes all six legs to find the required servo positions for a set of foot coordinates.
+* **legModel**: Constructs the visual array of joint points required for 3D plotting.
 
 ## Movement Functions
+* **stepForward**: Calculates the parabolic arc for a single linear step. One set of legs (tripod gait) lifts and moves to the target while the others remain grounded.
+* **stepTurnFoot**: Calculates the circular arc required for a single foot to contribute to a body rotation.
+* **stepTurn**: Coordinates all six feet to execute a step in a rotational turn cycle.
 
-These are a collection of functions to find how the hexapod will take steps to move linearlly in any direction and to turn itself in the x-y plane.
+## Movement Cycles
+* **walk**: Orchestrates the tripod gait. It breaks a target distance into manageable steps and generates the animation sequence.
+* **turn**: Orchestrates the rotational gait, allowing the robot to change its heading.
 
-### stepForward
+## Model Visualization
+* **showModel**: Renders the 3D Matplotlib plot. Updated to ensure the Z-axis limits correctly show the robot standing on the ground plane ($Z \approx -60$).
+* **animate**: The frame-by-frame update function used for movement cycle animations.
+* **animateBodyTranslate**: Demonstrates 6-DOF chassis movement while the feet remain locked in place.
 
-This function takes in an angle in the x-y plane to move in, a distance to move (in the same units as the model as a whole), a height to move each leg vertically, and a boolean to determine if the "right" legs are moving or the other legs are moving. The "right" legs are legs 0, 2, and 4 or every other leg starting from the front right leg of the robot and moving clockwise around the robot looking from above. This function then outputs the relative distance each foot needs to move compared to where it started to make a step in the desired direction. In order to move, one set of legs will lift up and the other will drag on the ground.
-
-### stepTurnFoot
-
-This function takes the x, y, and z position of a contact point of a leg along with the angle to turn to, the height to move the legs up to, and a boolean to determine if the "right" legs are moving or the other legs are moving. The "right" legs are legs 0, 2, and 4 or every other leg starting from the front right leg of the robot and moving clockwise around the robot looking from above. This funciton then returns the abolute location of each foot. **NOTE** that this is opposed to the relative position in the previous function as each foot can not move by the same relative amount to turn the robot. In order to move, one set of legs will lift up and the other will drag on the ground.
-
-### stepTurn
-
-This funciton takes in the contact positions of all of the legs, the angle to step to, the vertical height of the step, and a boolean to determine if the "right" legs are moving or the other legs are moving. The "right" legs are legs 0, 2, and 4 or every other leg starting from the front right leg of the robot and moving clockwise around the robot looking from above. This function then feeds each foot position into the previous funciton to find the absolute position of each foot.
-
-### walk
-
-Takes the leg model, a linear distance to move, and an angle to move in the x-y plane. This function takes the distance to move and breaks it into steps to move based on a maximum step size. The cycle ends with the hexapod moving to the neutral position. This function requires a positive distance to move. This function is used more as a test of the walking function of the robot. Below is an example of this walk cycle.
-
-<img src="https://github.com/Nabizzle/Hexapod/blob/main/Docs/Media/Hexapod_Walk.gif" width="500">
-
-### turn
-
-Takes the leg model and an angle to turn to. This function breaks the turn into steps based on the maximum turn angle. The cycle ends with the hexapod moving to the neutral position. This function requires a non-zero angle to turn to (positive angles are left turns). This function is used as a test of the turning function. Below is an example of this turn cycle turning the hexapd right and then left.
-
-<img src="https://github.com/Nabizzle/Hexapod/blob/main/Docs/Media/Hexapod_Turn.gif" width="500">
-
-### emgToWalk
-Takes the body and leg models, a boolean for which set of feet should move (same as in the previous step functions), the previous step distance, and the maximum distance for a step in the x-y plane. This function polls for two EMG signals to determine the distance to move and scales the maximum step size to the difference between the EMG signals. If the wrist flexor signal and stronger than the wrist extensor signal, the distance to move is positive. If the opposite is true, the distance is negative. The step size is the previous step distance taken plus the new distance. The output of the function is the leg model, the updated foot set boolean after the step, the step size taken during the function to be used in the next run, and the array of leg positions to take a step.
-
-### resetWalkStance
-Takes the body and leg models, a boolean for which set of feet should move (same as in the previous step functions), and the previous step distance. This function is meant to reset the stance of the robot when ending the walking cycle before switching to turning. It does this by completing the end of the previous step. The output of the function is the leg model, the updated foot set boolean after the step, and the array of leg positions to take the resetting step.
-
-### emgToTurn
-Takes the body and leg models, a boolean for which set of feet should move (same as in the previous step functions), the previous turning angle, and the maximum angle for a turn in the x-y plane. This function polls for two EMG signals to determine the angle to turn and scales the maximum turn angle to the difference between the EMG signals. If the wrist flexor signal and stronger than the wrist extensor signal, the angle to turn is positive (left turn). If the opposite is true, the angle is negative (right turn). The turning step angle is the previous step angle taken plus the new angle. The output of the function is the leg model, the updated foot set boolean after the step, the step angle taken during the function to be used in the next run, and the array of leg positions to take a step.
-
-### resetTurnStance
-Takes the body and leg models, a boolean for which set of feet should move (same as in the previous step functions), and the previous turn angle. This function is meant to reset the stance of the robot when ending the turn cycle before switching to walking. It does this by completing the end of the previous turning step. The output of the function is the leg model, the updated foot set boolean after the step, and the array of leg positions to take the resetting step.
-
-### switchMode
-Takes in a threshold of EMG to switch the mode. If the user cocontracts above the given threshold, the function returns true to indicate the mode should switch. If the cocontraction is not above threshold, the function returns false.
-
-### pollEMG
-Querrys the Raspberry Pi Zero W for the wrist flexor and wrist extensor EMG values. The EMG values are constrained between 0 and 1 and the EMG values are output as a two value list with the flexor and extensor values respectivly.
-
-## Rapsberry Pi to Raspberry Pi Communication
-Scripts used in the communications with and between Raspberry Pis.
-
-### receieveEMG
-Read in EMG values on the first two ADC channels of the Raspberry Pi zero through the MCP3008.
-
-### emgEstablishServer
-Open a TCPIP server on the hexapodNetwork Wifi IP address to receive EMG data from the raspberry pi. Also sends the data back to confirm the data was received.
-
-### decodeEMG
-Takes the received EMG data in the form of a byte string and converts the data to floats by splitting on the commas.
-
-### emgClient
-Establishes a connection to the EMG server on the hexapodNetwork wifi and sends EMG data to it.
-
-## Lynxmotiohn SSC-32U Driver
-Functions to communicate with the Lynxmotion SSC-32U to drive the 18 servos of the hexapod
-
-### angleToPW
-Takes in an angle in degrees and finds the pulse width of the pulse pulse width modulation signal
-
-### anglesToSerial
-Takes in a 6x3 numpy array for the 18 servos in the hexapod, the speed the servos should move, and the total time the movement should happen in. The function fomats the angles as a group command and outputs the command as a string.
-
-### connect
-Takes in the COM port to connect to and opens the serial port on that COM port.
-
-### disconnect
-Disconnects from a the inputted serial port.
-
-### sendData
-Takes in a serial port for control and a message to send. Sends the command over the serial port.
-
-## Controller Scripts
-Scripts for directly controlling the hexapod aggregating the total work of the full library.
-
-### controller
-Connects to the serial port of the Lynxmotiohn SSC-32U, and sets up the starting position of the hexapod. Then the function starts in the walking mode and starts moving based on the EMG signals. After each step, the function checks if the user is cocontracting to switch modes. If they are, the hexapod finishes the step to reset the stance and switches modes.
-
-### sit
-Tells the hexapod to sit with its body on the ground.
-
-### stand
-Tells the hexapod to move its legs out about the ground and then stand up
-
-### walkCycle
-The hexapod walks the input distance in the input angle direction without the need for EMG.
-
-### turnCycle
-The hexapod turns the input angle without the need for EMG.
-
-### sendPostions
-Takes in the serial port, the positions to move, and the body model. The function iterates through the array of positions to move and sequentially sends them to the Lynxmotiohn SSC-32U. After each message is sent, there is a pause.
-
+---
+*Built for Hackberry Pi 2026 - ACM@CMU*
