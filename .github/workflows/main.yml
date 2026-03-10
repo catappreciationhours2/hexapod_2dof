@@ -1,56 +1,56 @@
-# This is a basic workflow to help you get started with Actions
+# # This is a basic workflow to help you get started with Actions
 
-name: CI
+# name: CI
 
-# Controls when the workflow will run
-on:
-  # Triggers the workflow on push or pull request events but only for the main branch
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+# # Controls when the workflow will run
+# on:
+#   # Triggers the workflow on push or pull request events but only for the main branch
+#   push:
+#     branches: [ main ]
+#   pull_request:
+#     branches: [ main ]
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+#   # Allows you to run this workflow manually from the Actions tab
+#   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
-jobs:
-  Generate_Report:
-    runs-on: ubuntu-latest
+# # A workflow run is made up of one or more jobs that can run sequentially or in parallel
+# jobs:
+#   Generate_Report:
+#     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
+#     steps:
+#       - uses: actions/checkout@v2
+#         with:
+#           ref: ${{ github.event.pull_request.head.sha }}
 
-      # --- ADD THIS STEP HERE ---
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      # --------------------------
+#       # --- ADD THIS STEP HERE ---
+#       - name: Set up Python 3.11
+#         uses: actions/setup-python@v4
+#         with:
+#           python-version: '3.11'
+#       # --------------------------
 
-      - name: Report results to DeepSource
-        run: |
-          # Upgrade pip to ensure environment is clean
-          python -m pip install --upgrade pip
-          pip install pytest pytest-cov
-          pip install numpy==1.22.3
-          pip install pyserial==3.5
-          pip install adafruit-circuitpython-mcp3xxx==1.4.7
-          # Run pytest
-          pytest --cov=./ --cov-report xml
-          # DeepSource CLI
-          curl https://deepsource.io/cli | sh
-          coverage xml
-          ./bin/deepsource report --analyzer test-coverage --key python --value-file ./coverage.xml
-        env:
-          DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
+#       - name: Report results to DeepSource
+#         run: |
+#           # Upgrade pip to ensure environment is clean
+#           python -m pip install --upgrade pip
+#           pip install pytest pytest-cov
+#           pip install numpy==1.22.3
+#           pip install pyserial==3.5
+#           pip install adafruit-circuitpython-mcp3xxx==1.4.7
+#           # Run pytest
+#           pytest --cov=./ --cov-report xml
+#           # DeepSource CLI
+#           curl https://deepsource.io/cli | sh
+#           coverage xml
+#           ./bin/deepsource report --analyzer test-coverage --key python --value-file ./coverage.xml
+#         env:
+#           DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
           
-      - name: Send Results to CodeCov
-        run: |
-          curl -Os https://uploader.codecov.io/latest/linux/codecov
-          chmod +x codecov
-          ./codecov
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+#       - name: Send Results to CodeCov
+#         run: |
+#           curl -Os https://uploader.codecov.io/latest/linux/codecov
+#           chmod +x codecov
+#           ./codecov
+#         env:
+#           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
