@@ -1,169 +1,90 @@
+# 12-Servo 2-DOF Hexapod Adaptation
+
 # Table of Contents
 
 * [Hexapod Project Description](#hexapod-project-description)
+* [Hackberry Pi Adaptation](#hackberry-pi-adaptation)
 * [Getting Started](#getting-started)
   * [Prerequisites](#prerequisites)
-* [Author](#author)
-* [Acknowledgements](#acknowledgements)
+* [Authors](#authors)
+* [Acknowledgements & Citations](#acknowledgements--citations)
 * [Description of Each Script](#description-of-each-script)
   * [Rotation Matrices](#rotation-matrices)
-    * [xRot](#xrot)
-    * [yRot](#yrot)
-    * [zRot](#zrot)
   * [Body Functions](#body-functions)
-    * [bodyPos](#bodypos)
-  * [Leg Functions](#leg-functions)
-    * [legPos](#legpos)
-    * [legAngle](#legangle)
-    * [startLegPos](#startlegpos)
-    * [getFeetPos](#getfeetpos)
-    * [recalculateLegAngles](#recalculatelegangles)
-    * [legModel](#legmodel)
+  * [Leg Functions (12-Servo / 2-DOF)](#leg-functions)
   * [Movement Functions](#movement-functions)
-    * [stepForward](#stepforward)
-    * [stepTurnFoot](#stepturnfoot)
-    * [stepTurn](#stepturn)
   * [Movement Cycles](#movement-cycles)
-    * [walk](#walk)
-    * [turn](#turn)
   * [Model Visualization](#model-visualization)
-    * [showModel](#showmodel)
-    * [animate](#animate)
-    * [animateBodyTranslate](#animatebodytranslate)
 
 # Hexapod Project Description
 
-![Rendered Hexapod from Fusion360](https://github.com/Nabizzle/Hexapod/blob/main/Docs/Media/Hexapod.PNG)
+The goal of this project is to model and control a radially symmetrical hexapod (six-legged robot) capable of omnidirectional movement and independent body manipulation. This project includes a computational simulation used to verify inverse kinematics and a library of functions to drive a physical robot via serial commands.
 
-The ultimate goal of this project is to create a Hexapod, or six legged robot, that can move and turn in any direction in the x-y plane and rotate and translate the body of the robot along each axis independent of the legs of the robot. The control of the robot will be from control using two EMG sensors that have their data transmitted to the hexapod or from a phone app. The initial design was adapted from the design of [Capers II](https://www.instructables.com/Capers-II-a-Hexapod-Robot/) recreated in Fusion360 and made to be radially symetrical.
+# Hackberry Pi Adaptation
+This repository contains a specialized adaptation developed for **Hackberry Pi (ACM@CMU)**. While the original design utilized an 18-servo configuration (3-DOF per leg), this version has been refactored to work with a **12-servo setup** (2-DOF per leg). 
 
-This project is made in two parts. The first is a computational model where the [kinematics calculations](https://github.com/Nabizzle/Hexapod/blob/main/Docs/Kinematics%20Calculations/Hexapod%20Kinematics%20Calculation.pdf) were tested in getting the body to rotate and translate along the x, y, and z axes independent of the leg positions as well as getting the hexapod to walk and turn variable distances. The second part is the onboard code on the raspberry pis that control the physical robot and transmit EMG to the hexapod.
+In this architecture:
+1. **Base Servos:** Handle left/right horizontal rotation (Yaw).
+2. **Knee Servos:** Handle up/down vertical lifting (Pitch).
+3. **Rigid Limbs:** The third joint (Tibia) is replaced with a fixed rigid segment, simplifying the weight and power requirements while maintaining highly effective walking and turning gaits.
 
 ## Getting Started
 
-This code is only the computational model for testing the control of the robot. This is run through the Jupyter Notebook [Walking Model.](https://github.com/Nabizzle/Hexapod/blob/main/Code/Walking%20Model.ipynb) Refer to the notebook to see the outputs of creating the neutral position of an example walk and turn cycle. The bottom setion of the notebook allow you to change the body rotaion and translation before the hexapod walks and turns and the last two cells allow you to change the walking distance and angle as well as the turning angle. This ReadMe corresponds to the Jupyter Notebook. For the library of python functions to run the physical robot, refer to the [library's ReadMe](https://github.com/Nabizzle/Hexapod/tree/main/Code/hexapod)
+This repository contains the computational model for testing 2-DOF inverse kinematics. The core logic is contained within the Jupyter Notebook `Walking Model.ipynb`. This simulation verifies that the robot can maintain a level body while the feet follow the specific arc-trajectories required by fixed-length limbs.
 
 ### Prerequisites
 
 [Python 3.8.12 or later](https://www.python.org/)
-* Required libraries
-  * Numpy
-  * Matplotlib
-  * Seaborn
-  * Math
-  * Time
+* Required libraries:
+  * `Numpy`
+  * `Matplotlib`
+  * `Seaborn`
+  * `Math`
+  * `Time`
 
-## Author
+## Authors
 
-* **Nabeel Chowdhury**
+* **Noella Horo** - *2-DOF Adaptation & Implementation*
+* **Nabeel Chowdhury** - *Original 18-servo Computational Model*
 
-## Acknowledgements
+## Acknowledgements & Citations
 
-* Toglefritz for his original [hexapod design](https://www.instructables.com/Capers-II-a-Hexapod-Robot/) and [kinematics calculations](https://toglefritz.com/hexapod-inverse-kinematics-equations/) that I adapted for my hexapod
-* Oscar Liang for his explanation of the [kinematics equations](https://oscarliang.com/inverse-kinematics-implementation-hexapod-robots/) required.
+This project is an adaptation of the original Hexapod project by **Nabeel Chowdhury**. 
+* **Original Source Code:** [Nabizzle/Hexapod](https://github.com/Nabizzle/Hexapod)
+* **Design Inspiration:** Adapted from the [Capers II](https://www.instructables.com/Capers-II-a-Hexapod-Robot/) design by **Toglefritz**.
+* **Kinematics Guidance:** Equations based on research by [Oscar Liang](https://oscarliang.com/inverse-kinematics-implementation-hexapod-robots/).
 
 # Description of Each Script
 
-Each description below is of each function in the computational model which will be transferred over to the physical hexapod.
-
 ## Rotation Matrices
-
-These are the functions to find the rotation of any point around an axis by an angle in degrees.
-
-### xRot
-
-Rotation about the x axis by an angle in degrees.
-
-### yRot
-
-Rotation about the y axis by an angle in degrees.
-
-### zRot
-
-Rotation about the z axis by an angle in degrees.
+These functions calculate the rotation of 3D points around primary axes to transform target coordinates into the local frame of each leg.
+* **xRot / yRot / zRot**: Rotation about the X, Y, and Z axes respectively in degrees.
 
 ## Body Functions
-
-These are functions that relate to moving and creating the model of the hexapod body
-
-### bodyPos
-
-Creates a hexagon model of the body with the given pitch, roll, and yaw angles and the given x, y, and z translations from the center point of the coordinate axes.
+* **bodyPos**: Generates the 3D hexagon model representing the chassis. It calculates the position of the six leg attachment points based on global pitch, roll, yaw, and translation.
 
 ## Leg Functions
-
-These are functions for finding and refinding the positions of the legs from their servo angles or to do the reverse in finding the servo angles from the end positions of the hexapod feet.
-
-### legPos
-
-This function finds the positions of each segment of the leg from its servo angles and leg number and then outputs those locations to be added to the larger model of the legs.
-
-### legAngle
-
-Finds the servo angles of the leg based on the x, y, and z positions of the end contact point of the leg. This function then returns the servo angles as an output.
-
-### startLegPos
-
-Takes the body model and the starting outer radius the legs make on the robot as wel as the starting height of the robot off of the ground to find the starting servo angles of all of the legs. This function then outputs those angles as an array.
-
-### getFeetPos
-
-This function outputs the contact points of each leg with the ground as x, y, and z coordinates in an array.
-
-### recalculateLegAngles
-
-Takes an input of the current body model and current contact points of the legs to calculate the servo angles of all of the legs. This function outputs the servo angles of all of the legs.
-
-### legModel
-
-Takes in the servo angles of all of the legs as an array and calculates the positions of each leg segement to combine into a model of the legs.
+This module has been refactored for the **12-servo (2-DOF)** kinematic chain.
+* **legAngle (Inverse Kinematics)**: Calculates the necessary `Base` and `Knee` angles to reach a target coordinate. Unlike the 3-DOF version, this uses a 2D trigonometric approach to solve for the pitch of the rigid leg.
+* **legPos (Forward Kinematics)**: Determines the 3D coordinates of the joints (Body, Knee, and Foot) based on current servo angles. 
+* **startLegPos**: Initializes the hexapod in a neutral stance. The stance radius and height are optimized to ensure the 2-DOF limbs reach the ground plane effectively.
+* **getFeetPos**: Returns the global contact points of each leg with the ground.
+* **recalculateLegAngles**: Batch processes all six legs to find the required servo positions for a set of foot coordinates.
+* **legModel**: Constructs the visual array of joint points required for 3D plotting.
 
 ## Movement Functions
-
-These are a collection of functions to find how the hexapod will take steps to move linearlly in any direction and to turn itself in the x-y plane.
-
-### stepForward
-
-This function takes in an angle in the x-y plane to move in, a distance to move (in the same units as the model as a whole), a height to move each leg vertically, and a boolean to determine if the "right" legs are moving or the other legs are moving. The "right" legs are legs 0, 2, and 4 or every other leg starting from the front right leg of the robot and moving clockwise around the robot looking from above. This function then outputs the relative distance each foot needs to move compared to where it started to make a step in the desired direction. In order to move, one set of legs will lift up and the other will drag on the ground.
-
-### stepTurnFoot
-
-This function takes the x, y, and z position of a contact point of a leg along with the angle to turn to, the height to move the legs up to, and a boolean to determine if the "right" legs are moving or the other legs are moving. The "right" legs are legs 0, 2, and 4 or every other leg starting from the front right leg of the robot and moving clockwise around the robot looking from above. This funciton then returns the abolute location of each foot. **NOTE** that this is opposed to the relative position in the previous function as each foot can not move by the same relative amount to turn the robot. In order to move, one set of legs will lift up and the other will drag on the ground.
-
-### stepTurn
-
-This funciton takes in the contact positions of all of the legs, the angle to step to, the vertical height of the step, and a boolean to determine if the "right" legs are moving or the other legs are moving. The "right" legs are legs 0, 2, and 4 or every other leg starting from the front right leg of the robot and moving clockwise around the robot looking from above. This function then feeds each foot position into the previous funciton to find the absolute position of each foot.
+* **stepForward**: Calculates the parabolic arc for a single linear step. One set of legs (tripod gait) lifts and moves to the target while the others remain grounded.
+* **stepTurnFoot**: Calculates the circular arc required for a single foot to contribute to a body rotation.
+* **stepTurn**: Coordinates all six feet to execute a step in a rotational turn cycle.
 
 ## Movement Cycles
-
-These are functions to create a walk and turn cycle.
-
-### walk
-
-Takes the body and leg models, a figure to plot on, a linear distance to move, and an angle to move in in the x-y frome. This function takes the distance to move and breaks it into steps to move based on a maximum step size. The cycle ends with the hexapod moving to the neutral position. This function requires a positive distance to move and ends with the creation of a video, saved to the media folder, of the movement. Below is an example of this walk cycle.
-
-<img src="https://github.com/Nabizzle/Hexapod/blob/main/Docs/Media/Hexapod_Walk.gif" width="500">
-
-### turn
-
-Takes the body and leg models, a figure to plot on, and an angle to turn to. This function breaks the turn into steps based on the maximum turn angle. The cycle ends with the hexapod moving to the neutral position. This function requires a non-zero angle to turn to (positive angles are left turns) and ends with the creation of a video, saved to the media folder, of the movement. Left and right turns are saved as seperate videos. Below is an example of this turn cycle turning the hexapd right and then left.
-
-<img src="https://github.com/Nabizzle/Hexapod/blob/main/Docs/Media/Hexapod_Turn.gif" width="500">
+* **walk**: Orchestrates the tripod gait. It breaks a target distance into manageable steps and generates the animation sequence.
+* **turn**: Orchestrates the rotational gait, allowing the robot to change its heading.
 
 ## Model Visualization
+* **showModel**: Renders the 3D Matplotlib plot. Updated to ensure the Z-axis limits correctly show the robot standing on the ground plane ($Z \approx -60$).
+* **animate**: The frame-by-frame update function used for movement cycle animations.
+* **animateBodyTranslate**: Demonstrates 6-DOF chassis movement while the feet remain locked in place.
 
-Functions to plot the full body and leg model and take in an array of leg movements to animate the walk and turn cycles
-
-### showModel
-
-Takes the body and leg models, the figure to plot on, the floor height, and an elevation and azmuth angle to plot a 3D figure at. This funciton draws the body as green, the "right" legs as blue, and the "left" legs as red.
-
-### animate
-
-This is the function required by the movie writer to create a video. This takes in the same parameters as the showModel function as well as the leg movements to animate the walk and turn cycles.
-
-### animateBodyTranslate
-
-This function takes a specific frame number and figure to iterate through translation and rotations arrays in order to create a video of the body of the hexapod moving in all degrees of freedom independent of leg position.
-
-<img src="https://github.com/Nabizzle/Hexapod/blob/main/Docs/Media/Hexapod_Body_Translation.gif" width="500">
+---
+*Built for Hackberry Pi 2026 - ACM@CMU*
