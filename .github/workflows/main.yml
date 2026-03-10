@@ -15,34 +15,35 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   Generate_Report:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
+      # --- ADD THIS STEP HERE ---
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      # --------------------------
+
       - name: Report results to DeepSource
         run: |
-          # Install pytest and pytest-cov pacakages from pip
+          # Upgrade pip to ensure environment is clean
+          python -m pip install --upgrade pip
           pip install pytest pytest-cov
           pip install numpy==1.22.3
           pip install pyserial==3.5
           pip install adafruit-circuitpython-mcp3xxx==1.4.7
-          # Run pytest with --cov and --cov-report flags
+          # Run pytest
           pytest --cov=./ --cov-report xml
-          # Install deepsource CLI
+          # DeepSource CLI
           curl https://deepsource.io/cli | sh
-          # Generate coverage report in xml format
           coverage xml
-          # From the root directory, run the report coverage command
           ./bin/deepsource report --analyzer test-coverage --key python --value-file ./coverage.xml
-
         env:
           DEEPSOURCE_DSN: ${{ secrets.DEEPSOURCE_DSN }}
           
@@ -51,6 +52,5 @@ jobs:
           curl -Os https://uploader.codecov.io/latest/linux/codecov
           chmod +x codecov
           ./codecov
-          
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
