@@ -1,19 +1,35 @@
-# test_air_walk.py
-from hexapod import controller
 import time
+from hexapod.controller import stand, sit, walkCycle
 
-USB_PORT = "/dev/ttyUSB0"
+# Your PCA9685 default I2C address
+PCA_ADDRESS = 0x40 
 
-def test_gait():
-    print("CAUTION: Prop robot up so legs don't touch ground!")
-    time.sleep(2)
-    
-    print("Executing 100mm Forward Walk Cycle...")
-    # distance=100mm, angle=90 (forward)
-    controller.walkCycle(USB_PORT, distance=100, angle=90)
-    
-    print("Walking complete. Sitting...")
-    controller.sit(USB_PORT)
+def run_air_walk_test():
+    try:
+        print("--- Hexapod PCA9685 Walking Test ---")
+        print("1. Powering up and standing...")
+        # This uses your existing 'stand' logic
+        stand(PCA_ADDRESS)
+        time.sleep(2)
+
+        print("2. Starting Walk Cycle (Forward 100mm)...")
+        # distance = 100mm, angle = 90 degrees (straight forward)
+        walkCycle(PCA_ADDRESS, distance=100, angle=90)
+        
+        print("3. Walk complete. Waiting...")
+        time.sleep(2)
+
+        print("4. Sitting down...")
+        sit(PCA_ADDRESS)
+        print("Test Finished Successfully.")
+
+    except Exception as e:
+        print(f"Test Failed: {e}")
+    except KeyboardInterrupt:
+        print("\nTest stopped by user. Sitting...")
+        sit(PCA_ADDRESS)
 
 if __name__ == "__main__":
-    test_gait()
+    # WARNING: Make sure the robot is propped up so the legs 
+    # move freely in the air before running this!
+    run_air_walk_test()
