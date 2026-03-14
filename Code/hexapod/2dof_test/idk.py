@@ -9,13 +9,29 @@ from adafruit_motor import servo
 import adafruit_mpu6050
 from ahrs.filters import Mahony
 
-# --- Hardware Setup ---
-i2c = board.I2C()
-mpu = adafruit_mpu6050.MPU6050(i2c)
+# ==========================================
+# 1. HARDWARE INITIALIZATION (Staggered)
+# ==========================================
+print("Starting I2C Bus...")
+i2c = busio.I2C(board.SCL, board.SDA)
+time.sleep(0.5) # Give the bus a moment to stabilize
+
+print("Initializing Servo Driver (PCA9685)...")
 pca = PCA9685(i2c)
 pca.frequency = 50
+time.sleep(0.5) # Let the power stabilize after driver wakes up
 
-# Match the pulse widths from your reset code
+print("Initializing IMU (MPU6050)...")
+try:
+    mpu = adafruit_mpu6050.MPU6050(i2c)
+    print("IMU found successfully!")
+except Exception as e:
+    print(f"CRITICAL ERROR: Could not find IMU. Error: {e}")
+    exit()
+
+# ==========================================
+# 2. SERVO SETUP & HOME POSITIONS
+# ==========================================
 MIN_PULSE = 500
 MAX_PULSE = 2500
 LIMIT = 15.0  # Max degrees away from home position
@@ -26,17 +42,17 @@ for i in range(12):
     s = servo.Servo(pca.channels[i], min_pulse=MIN_PULSE, max_pulse=MAX_PULSE)
     servos.append(s)
 
-# Define Home Positions based on your reset code
-# Even = Base (0 deg), Odd = Knee (180 deg)
+# Define Home Positions: Even = Base (0 deg), Odd = Knee (180 deg)
 HOME_ANGLES = [180 if i % 2 != 0 else 0 for i in range(12)]
 
-# Move everything to start positions safely
 print("Moving to home positions...")
 for i, s in enumerate(servos):
     s.angle = HOME_ANGLES[i]
-time.sleep(1)
+time.sleep(1) # Let the physical robot settle
 
-# --- IMU Calibration ---
+# ==========================================
+# 3. IMU CALIBRATION
+# ==========================================
 SAMPLING_FREQ = 100.0
 LOOP_DELAY = 1.0 / SAMPLING_FREQ
 orientation = Mahony(frequency=SAMPLING_FREQ)
@@ -62,11 +78,14 @@ r_init = R.from_quat(Q)
 calibration_offset = r_init.as_euler('zyx', degrees=True)
 print("--- STABILIZATION ACTIVE ---")
 
+# ==========================================
+# 4. MAIN STABILIZATION LOOP
+# ==========================================
 try:
     while True:
         start_time = time.time()
 
-        # 1. Update Orientation
+        # Update Orientation
         gyro_data = np.deg2rad(np.array(mpu.gyro) - gyro_offsets)
         accel_data = np.array(mpu.acceleration)
         Q = orientation.updateIMU(prev_row, gyr=gyro_data, acc=accel_data)
@@ -78,10 +97,7 @@ try:
         pitch = current_angles[1] # Front-to-back tilt
         roll = current_angles[2]  # Side-to-side tilt
 
-        # 2. Map Offsets to Legs
-        # Assuming a standard layout where legs 0,1,2 are one side and 3,4,5 are the other.
-        # You may need to tweak the `leg_idx` grouping below based on how you wired them.
-        # 2. Map Offsets to Legs (Clockwise Layout)
+        # Map Offsets to Legs (Clockwise Layout)
         for leg_idx in range(6):
             knee_channel = (leg_idx * 2) + 1
             
@@ -91,7 +107,7 @@ try:
             elif leg_idx in [2, 3]:    # Back legs
                 pitch_correction = -pitch
             else:                      # Middle legs (1 and 4)
-                pitch_correction = 0   # Pivot point, no height change needed
+                pitch_correction = 0   
 
             # --- Roll logic (Y-axis: Side to side) ---
             if leg_idx in [0, 1, 2]:   # Right side legs
@@ -99,7 +115,7 @@ try:
             elif leg_idx in [3, 4, 5]: # Left side legs
                 roll_correction = roll
 
-            # 3. Apply the 15-degree limit and set the angle
+            # Apply the 15-degree limit and set the angle
             total_offset = pitch_correction + roll_correction
             safe_offset = np.clip(total_offset, -LIMIT, LIMIT)
             
@@ -109,8 +125,7 @@ try:
             # Final hardware safety clip
             servos[knee_channel].angle = np.clip(new_angle, 0, 180)
 
-            
-        # 4. Maintain precise loop frequency
+        # Maintain precise loop frequency
         elapsed = time.time() - start_time
         if elapsed < LOOP_DELAY:
             time.sleep(LOOP_DELAY - elapsed)
