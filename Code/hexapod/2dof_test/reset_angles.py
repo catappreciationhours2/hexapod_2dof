@@ -8,7 +8,7 @@ import time
 # Match the pulse widths to your specific servos (usually 500 to 2500)
 MIN_PULSE = 500
 MAX_PULSE = 2500
-TARGET_ANGLE = 90
+TARGET_ANGLE = 0
 
 def reset_all_servos():
     try:
@@ -32,7 +32,10 @@ def reset_all_servos():
                                 max_pulse=MAX_PULSE)
                 
                 # Command the angle
-                s.angle = TARGET_ANGLE
+                if joint_idx == 1:
+                    s.angle = 180
+                else:
+                    s.angle = TARGET_ANGLE
                 print(f"Leg {leg_idx}, Joint {joint_idx} (Channel {channel_num}) set to {TARGET_ANGLE}")
         
         print("\nAll servos initialized. Keep the script running for a moment to ensure positions are held.")
@@ -46,4 +49,4 @@ def reset_all_servos():
         print(f"Error: {e}")
 
 if __name__ == "__main__":
-    reset_all_servos()
+    reset_all_servos()  
