@@ -6,12 +6,6 @@ PCA_ADDRESS = 0x40
 
 def run_air_walk_test():
     try:
-        print("--- Hexapod PCA9685 Walking Test ---")
-        print("1. Powering up and standing...")
-        # This uses your existing 'stand' logic
-        stand(PCA_ADDRESS)
-        time.sleep(2)
-
         print("2. Starting Walk Cycle (Forward 100mm)...")
         # distance = 100mm, angle = 90 degrees (straight forward)
         walkCycle(PCA_ADDRESS, distance=100, angle=90)
